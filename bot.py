@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+import io
 import subprocess
 
 import discord
@@ -68,9 +69,6 @@ async def on_message(message):
         response = "Error"
         if outs:
             response = outs.decode('utf-8')
-        print("OUTPUT -|")
-        print(response)
-        print("|-")
         output_arr = [response[i:i+message_size] for i in range(0, len(response), message_size)]
         to_print = out_size
         nb_of_messages = int(to_print / message_size) + 1
@@ -78,13 +76,21 @@ async def on_message(message):
         for i in range(len(output_arr[:nb_of_messages])):
             chunk_len = len(output_arr[i][:to_print])
             if chunk_len > 0:
+                print("MESSAGE-|")
+                print(output_arr[i][:to_print])
+                print("|-")
                 total_printed += chunk_len
                 await message.channel.send(output_arr[i][:to_print])
             to_print -= message_size
+        stream_str = io.BytesIO(response.encode('utf-8'))#bytes(response,'ascii'))
+        file_stream = discord.File(stream_str, "response.txt")
+        print("total printed: " + str(total_printed) + "/" + str(len(response)))
         await message.channel.send("total printed: " + str(total_printed) + "/" + str(len(response)))
+        await message.channel.send(file=file_stream)
     else:
         notification = "usage: \'$ shell exp\' or \'!t int\' for timeout or \'!m int\' for max print amt"
     if notification:
+        print(notification)
         await message.channel.send(notification)
 
 if __name__ == "__main__":
