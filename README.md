@@ -1,4 +1,4 @@
-# python_discord_bot
+# python_discord_minishell
 
 control raspberry pi remotely by sending shell expressions to the bot.
 
