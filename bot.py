@@ -18,7 +18,9 @@ from random import seed
 from threading import Thread
 
 last_dir = os.getcwd()
-client = discord.Client()
+intents = discord.Intents.default()
+intents.message_content = True
+client = discord.Client(intents=intents)
 curr_channel = None
 script_location = pathlib.Path(__file__).parent.absolute()
 message_size = 2000
@@ -47,12 +49,19 @@ class shell_worker(Thread):
 @client.event
 async def on_ready():
     global curr_channel
-    in_guild = discord.utils.get(client.guilds, name=guild)
-    print(
-        f'{client.user} is connected to the following guild:\n'
-        f'{in_guild.name}(id: {in_guild.id})'
-    )
-    curr_channel = discord.utils.get(in_guild.text_channels, name='general')
+    global jobs
+    global client
+    curr_channel = client.get_channel(1154547940099108894)
+
+    while (True):
+        for j in jobs:
+            command, path, proc, running = j.get_info()
+            if j.running == False and j.reported == False:
+                j.join()
+                await get_results(path, curr_channel)
+                j.reported = True
+        await asyncio.sleep(1)
+
 
 async def get_results(path, channel):
     global jobs
@@ -152,18 +161,6 @@ def new_job(worker, command):
     poll_obj.unregister(process.stdout)
     print("done!")
 
-async def stop_finished_threads():
-    global jobs
-    global curr_channel
-
-    while (True):
-        for j in jobs:
-            command, path, proc, running = j.get_info()
-            if j.running == False and j.reported == False:
-                j.join()
-                await get_results(path, curr_channel)
-                j.reported = True
-        await asyncio.sleep(1)
 
 @client.event
 async def on_message(message):
@@ -278,13 +275,15 @@ async def on_message(message):
         await message.channel.send(notification)
 
 if __name__ == "__main__":
-
     seed(1)
+
+    if os.getenv('VIRTUAL_ENV') is None or os.getenv('DISCORD_TOKEN') is None or os.getenv('DISCORD_GUILD'):
+        return
+
     #looks for .env file in folder $VIRTUAL_ENV
     envars = os.getenv('VIRTUAL_ENV') + '/' + '.env'
     load_dotenv(envars)
     #loads these two variables from that .env file
     token = os.getenv('DISCORD_TOKEN')
     guild = os.getenv('DISCORD_GUILD')
-    client.loop.create_task(stop_finished_threads())
     client.run(token)
