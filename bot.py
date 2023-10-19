@@ -277,12 +277,17 @@ async def on_message(message):
 if __name__ == "__main__":
     seed(1)
 
-    if os.getenv('VIRTUAL_ENV') is None or os.getenv('DISCORD_TOKEN') is None or os.getenv('DISCORD_GUILD'):
-        return
+    if os.getenv('VIRTUAL_ENV') is None:
+        print('bad env variables - virtual env path is: %s' % os.getenv('VIRTUAL_ENV'))
+        exit()
 
     #looks for .env file in folder $VIRTUAL_ENV
-    envars = os.getenv('VIRTUAL_ENV') + '/' + '.env'
+    envars = str(os.getenv('VIRTUAL_ENV')) + '/' + '.env'
     load_dotenv(envars)
+
+    if os.getenv('DISCORD_TOKEN') is None or os.getenv('DISCORD_GUILD') is None:
+        print('bad env variables - virtual env path is: %s' % os.getenv('VIRTUAL_ENV'))
+        exit()
     #loads these two variables from that .env file
     token = os.getenv('DISCORD_TOKEN')
     guild = os.getenv('DISCORD_GUILD')
